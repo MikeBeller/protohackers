@@ -1,2 +1,4 @@
-# ubuntu-focal-generic-codespace
-My generic codespace for ubuntu focal
+# protohackers challenge
+
+Repo for working on the protohackers challenge
+
