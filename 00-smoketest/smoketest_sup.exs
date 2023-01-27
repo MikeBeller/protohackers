@@ -10,31 +10,40 @@ defmodule Smoke do
     IO.puts "waiting"
     {:ok, client} = IO.inspect(:gen_tcp.accept(sock))
     IO.puts "accepted"
-    Task.start(fn -> serve_echo(client) end)
+    DynamicSupervisor.start_child(Smoke.WorkerSupervisor, {Task, fn -> smoke_worker(client) end})
     loop_acceptor(sock)
   end
 
-  defp serve_echo(sock) do
+  defp smoke_worker(sock) do
     IO.puts "new client #{inspect sock}"
     case :gen_tcp.recv(sock, 0) do
       {:ok, data} ->
         :gen_tcp.send(sock, data)
-        serve_echo(sock)
+        smoke_worker(sock)
       {:error, err} ->
         IO.inspect(err)
     end
   end
 end
 
-defmodule Smoke.Application do
-  use Application
-  @impl true
-  def start(_type, _args) do
+defmodule Smoke.Supervisor do
+  use Supervisor
 
+  def start_link(opts) do
+    Supervisor.start_link(__MODULE__, :ok, opts)
+  end
+
+  @impl true
+  def init(:ok) do
+    children = [
+      {Task, fn -> Smoke.listen(9999) end},
+      {DynamicSupervisor, name: Smoke.WorkerSupervisor, strategy: :one_for_one}
+    ]
+
+    opts = [strategy: :one_for_one, name: Smoke.Supervisor]
+    Supervisor.init(children, opts)
   end
 end
 
-{:ok, _pid} = Supervisor.start_link(children, strategy: :one_for_one, name: :port_supervisor)
-
-#Smoke.listen(9999)
-System.no_halt(true)
+{:ok, _pid} = Smoke.Supervisor.start_link([])
+receive do _ -> 1 end
