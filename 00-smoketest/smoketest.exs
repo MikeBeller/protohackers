@@ -24,4 +24,4 @@ defmodule Smoke do
 end
 
 Smoke.listen(9999)
-Pocess.sleep(:infinity)
+System.no_halt(true)
