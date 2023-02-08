@@ -1,0 +1,7 @@
+#run = "cd 00-smoketest; python smoke1.py"
+run = "bash"
+
+entrypoint = "00-smoketest/smoke1.py"
+
+[nix]
+channel = "stable-22_11"
