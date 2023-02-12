@@ -1,6 +1,8 @@
 import socket
 from threading import Thread
 
+# attempt to combine server and test client into one program using threads
+
 def server(sock):
   try:
     while True:

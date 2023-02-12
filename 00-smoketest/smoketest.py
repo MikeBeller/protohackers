@@ -7,11 +7,13 @@ async def tcp_echo_server():
 
 async def connect(reader, writer):
     while True:
-        data = await reader.readline()
-        if not data: break
+        data = await reader.read(-1)
+        if not data:
+            break
         writer.write(data)
         await writer.drain()
     writer.close()
     await writer.wait_closed()
 
+print("Starting server")
 asyncio.run(tcp_echo_server())
