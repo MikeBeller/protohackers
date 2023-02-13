@@ -25,11 +25,11 @@ end
 
 ##### test code
 
-if System.argv() == ["--serve"] do
+if System.argv() == ["--test"] do
+  ExUnit.start()
+else
   Smoke.listen(9999)
   System.no_halt(true)
-else
-  ExUnit.start()
 end
 
 defmodule Smoke.SmokeTest do

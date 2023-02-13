@@ -1,6 +1,6 @@
 import asyncio
 
-# Combined server and test client
+# Example combined server and client in python
 
 async def server(port):
   "async tcp listener"
@@ -39,5 +39,5 @@ async def test(port):
   await asyncio.wait([ stask])
 
 if __name__ == "__main__":
-   asyncio.run(test(8080))
+   asyncio.run(test(9999))
   
