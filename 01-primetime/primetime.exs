@@ -6,7 +6,7 @@ defmodule PrimeTime do
   end
 
   def listen(port) do
-    {:ok, sock} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true])
+    {:ok, sock} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true, ip: {127,0,0,1}])
     IO.puts "Accepting connections on port #{port}"
     loop_acceptor(sock)
   end
