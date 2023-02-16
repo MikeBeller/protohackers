@@ -31,4 +31,27 @@ defmodule Means.MeansTest do
     assert <<100::size(32)>> = resp
     :ok = :gen_tcp.close(sock)
   end
+
+  test "handles no items" do
+    sock = connect(@port)
+    assert :ok = :gen_tcp.send(sock, query_msg(@test_now-10, @test_now+10))
+    assert {:ok, resp} = :gen_tcp.recv(sock, 4, 3000)
+    assert <<0::size(32)>> = resp
+    :ok = :gen_tcp.close(sock)
+  end
+
+  test "handles multiple itesm" do
+    sock = connect(@port)
+    assert :ok = :gen_tcp.send(sock, insert_msg(@test_now, 100))
+    assert :ok = :gen_tcp.send(sock, insert_msg(@test_now+10, 200))
+    assert :ok = :gen_tcp.send(sock, insert_msg(@test_now+20, 300))
+    assert :ok = :gen_tcp.send(sock, query_msg(@test_now, @test_now+30))
+    assert {:ok, <<200::size(32)>>} = :gen_tcp.recv(sock, 4, 3000)
+    assert :ok = :gen_tcp.send(sock, insert_msg(@test_now+15, 400))
+    assert :ok = :gen_tcp.send(sock, query_msg(@test_now, @test_now+21))
+    assert {:ok, <<250::size(32)>>} = :gen_tcp.recv(sock, 4, 3000)
+    :ok = :gen_tcp.close(sock)
+  end
+
+
 end
