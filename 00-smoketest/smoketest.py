@@ -1,7 +1,7 @@
 import asyncio
 
 async def tcp_echo_server():
-    server = await asyncio.start_server(echo_server, host="127.0.0.1", port=9999)
+    server = await asyncio.start_server(echo_server, host="0.0.0.0", port=9999)
     async with server:
         await server.serve_forever()
 
@@ -11,10 +11,10 @@ async def echo_server(reader, writer):
         data = await reader.read(1024)
         if not data:
             break
-        print("received:", data.decode())
+        #print("received:", data.decode())
         writer.write(data)
         await writer.drain()
-        print("sent: %r" % data.decode())
+        #print("sent: %r" % data.decode())
     writer.close()
     await writer.wait_closed()
 
