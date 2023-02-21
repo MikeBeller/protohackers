@@ -1,5 +1,3 @@
-Mix.install([{:porcelain, "~> 2.0"}])
-
 ExUnit.start()
 
 defmodule Means.MeansTest do
@@ -23,14 +21,10 @@ defmodule Means.MeansTest do
   end
 
   setup_all do
-    pid = Porcelain.spawn("elixir", ["means.exs"])
-    IO.puts "Started #{inspect(pid)}"
+    pid = Port.open({:spawn, "elixir means.exs"}, [:binary])
     Process.sleep(1000)
     on_exit(fn ->
-      IO.puts "Stopping #{inspect(pid)}"
-      Porcelain.Process.stop(pid)
-      Porcelain.Process.await(pid)
-      IO.puts("Stopped #{inspect(pid)}")
+      send(pid, {self(), :close})
     end)
     {:ok, pid: pid}
   end
@@ -72,7 +66,6 @@ defmodule Means.MeansTest do
     assert {:ok, resp} = :gen_tcp.recv(sock, 4, 3000)
     assert <<-100::signed-integer-size(32)>> = resp
     :ok = :gen_tcp.close(sock)
+    IO.puts "Done"
   end
-
-
 end

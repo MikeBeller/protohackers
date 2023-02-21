@@ -12,26 +12,35 @@ defmodule Means do
     end
   end
 
-  def listen(port) do
+  def start(port) do
     {:ok, sock} = :gen_tcp.listen(port, [:binary, packet: :raw, active: false, reuseaddr: true])
     IO.puts "Accepting connections on port #{port}"
-    loop_acceptor(sock)
+    _task = Task.start(fn -> loop_acceptor(sock) end)
+    IO.read(:stdio, :all)
+    :gen_tcp.close(sock)
+    System.halt(0)
   end
 
   defp loop_acceptor(sock) do
-    {:ok, client} = :gen_tcp.accept(sock)
-    Task.start(fn -> serve_means(client) end)
-    loop_acceptor(sock)
+    case :gen_tcp.accept(sock) do
+      {:ok, client} ->
+        Task.start(fn -> serve_means(client) end)
+        loop_acceptor(sock)
+      {:error, :eagain} ->
+        loop_acceptor(sock)
+      {:error, err} ->
+        IO.inspect(err)
+    end
   end
 
   defp serve_means(sock, state \\ %{}) do
     case :gen_tcp.recv(sock, 9) do
-      {:ok, <<?I, ts::size(32), prc::size(32)>>} ->
+      {:ok, <<?I, ts::size(32), prc::signed-integer-size(32)>>} ->
         serve_means(sock, Map.put(state, ts, prc))
-      {:ok, <<?Q, min_ts::size(32), max_ts::size(32)>>} ->
+      {:ok, <<?Q, min_ts::signed-integer-size(32), max_ts::signed-integer-size(32)>>} ->
         IO.puts "Querying #{min_ts} - #{max_ts}"
         mean = compute_mean(state, min_ts, max_ts)
-        :gen_tcp.send(sock, <<mean::size(32)>>)
+        :gen_tcp.send(sock, <<mean::signed-integer-size(32)>>)
         serve_means(sock, state)
       {:ok, _} ->
         :gen_tcp.close(sock)
@@ -43,5 +52,4 @@ defmodule Means do
   end
 end
 
-Means.listen(9999)
-Pocess.sleep(:infinity)
+Means.start(9999)

@@ -1,12 +1,17 @@
 Mix.install([{:jason, "~> 1.0"}])
 
 defmodule PrimeTime do
+  def is_prime(n) when n < 2, do: false
+  def is_prime(n) when n == 2, do: true
+  def is_prime(n) when rem(n, 2) == 0, do: false
+  def is_prime(n) when n == 3, do: true
   def is_prime(n) do
     MillerRabin.miller_rabin?(n, 10)
   end
 
   def listen(port) do
-    {:ok, sock} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true, ip: {127,0,0,1}])
+    {:ok, sock} = :gen_tcp.listen(port, [:binary, packet: :line,
+      buffer: 65536, active: false, reuseaddr: true])
     IO.puts "Accepting connections on port #{port}"
     loop_acceptor(sock)
   end
