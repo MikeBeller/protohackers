@@ -1,41 +1,51 @@
 defmodule Chat.Room do
   use GenServer
 
-  def start_link(room_name) do
-    GenServer.start_link(__MODULE__, room_name)
+  def start_link(_opts) do
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def join(room_name, pid) do
-    GenServer.call(room_name, {:join, pid})
+  @spec join(String.t(), pid()) :: :ok | {:error, symbol()}
+  def join(name, pid) do
+    GenServer.call(Chat.Room, {:join, name, pid})
   end
 
-  def leave(room_name, pid) do
-    GenServer.call(room_name, {:leave, pid})
+  def leave(name) do
+    GenServer.call(Chat.Room, {:leave, name})
   end
 
-  def broadcast(room_name, message) do
-    GenServer.cast(room_name, {:broadcast, message})
-  end
-
-  @impl true
-  def init(room_name) do
-    {:ok, %{name: room_name, members: MapSet.new()}}
+  def broadcast(from_pid, message) do
+    GenServer.cast(Chat.Room, {:broadcast, from_pid, message})
   end
 
   @impl true
-  def handle_call({:join, pid}, _from, state) do
-    {:reply, :ok, %{state | members: MapSet.put(state.members, pid)}}
+  def init(:ok) do
+    {:ok, %{members: %{}}}
   end
 
   @impl true
-  def handle_call({:leave, pid}, _from, state) do
-    {:reply, :ok, %{state | members: MapSet.delete(state.members, pid)}}
+  def handle_call({:join, name, pid}, _from, %{members: members} = state) do
+    case Map.fetch(members, name) do
+      {:ok, _} ->
+        {:reply, {:error, :already_joined}, state}
+      :error ->
+        members = Map.put(state.members, name, pid)
+        member_names = Map.keys(members)
+        send(pid, "* present: #{Enum.join(member_names, ", ")}")
+        broadcast(pid, "* #{name} has joined the room")
+        {:reply, :ok, %{state | members: members}}
+    end
   end
 
   @impl true
-  def handle_cast({:broadcast, message}, state) do
+  def handle_call({:leave, name}, _from, state) do
+    {:reply, :ok, %{state | members: MapSet.delete(state.members, name)}}
+  end
+
+  @impl true
+  def handle_cast({:broadcast, from_pid, message}, state) do
     Enum.each(state.members, fn pid ->
-      send(pid, message)
+      if pid != from_pid, do: send(pid, message)
     end)
 
     {:noreply, state}
