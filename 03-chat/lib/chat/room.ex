@@ -5,15 +5,17 @@ defmodule Chat.Room do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  @spec join(String.t(), pid()) :: :ok | {:error, symbol()}
+  @spec join(String.t(), pid()) :: :ok | {:error, atom()}
   def join(name, pid) do
     GenServer.call(Chat.Room, {:join, name, pid})
   end
 
+  @spec leave(String.t()) :: :ok
   def leave(name) do
     GenServer.call(Chat.Room, {:leave, name})
   end
 
+  @spec broadcast(pid(), String.t()) :: :ok
   def broadcast(from_pid, message) do
     GenServer.cast(Chat.Room, {:broadcast, from_pid, message})
   end
@@ -39,12 +41,12 @@ defmodule Chat.Room do
 
   @impl true
   def handle_call({:leave, name}, _from, state) do
-    {:reply, :ok, %{state | members: MapSet.delete(state.members, name)}}
+    {:reply, :ok, %{state | members: Map.delete(state.members, name)}}
   end
 
   @impl true
-  def handle_cast({:broadcast, from_pid, message}, state) do
-    Enum.each(state.members, fn pid ->
+  def handle_cast({:broadcast, from_pid, message}, %{members: members} = state) do
+    Enum.each(members, fn {_name, pid} ->
       if pid != from_pid, do: send(pid, message)
     end)
 
