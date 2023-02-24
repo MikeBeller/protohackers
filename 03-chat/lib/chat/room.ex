@@ -5,14 +5,14 @@ defmodule Chat.Room do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  @spec join(String.t(), pid()) :: :ok | {:error, atom()}
-  def join(name, pid) do
-    GenServer.call(Chat.Room, {:join, name, pid})
+  @spec join(pid(), String.t()) :: :ok | {:error, atom()}
+  def join(pid, name) do
+    GenServer.call(Chat.Room, {:join, pid, name})
   end
 
-  @spec leave(String.t()) :: :ok
-  def leave(name) do
-    GenServer.call(Chat.Room, {:leave, name})
+  @spec leave(pid()) :: :ok
+  def leave(pid) do
+    GenServer.call(Chat.Room, {:leave, pid})
   end
 
   @spec broadcast(pid(), String.t()) :: :ok
@@ -25,31 +25,40 @@ defmodule Chat.Room do
     {:ok, %{members: %{}}}
   end
 
+  # allow duplicate names
   @impl true
-  def handle_call({:join, name, pid}, _from, %{members: members} = state) do
-    case Map.fetch(members, name) do
-      {:ok, _} ->
-        {:reply, {:error, :already_joined}, state}
-      :error ->
-        members = Map.put(state.members, name, pid)
-        member_names = Map.keys(members)
-        send(pid, "* present: #{Enum.join(member_names, ", ")}")
-        broadcast(pid, "* #{name} has joined the room")
-        {:reply, :ok, %{state | members: members}}
-    end
+  def handle_call({:join, pid, name}, _from, %{members: members} = state) do
+    Process.monitor(pid) # monitor the process for exit signals
+    Enum.each(members, fn {pid, _name} ->
+      send(pid, "* #{name} has joined the room")
+    end)
+    member_names = Map.values(members)
+    send(pid, "* present: #{Enum.join(member_names, ", ")}")
+    {:reply, :ok, %{state | members: Map.put(state.members, pid, name)}}
   end
 
   @impl true
-  def handle_call({:leave, name}, _from, state) do
-    {:reply, :ok, %{state | members: Map.delete(state.members, name)}}
+  def handle_call({:leave, pid}, _from, state) do
+    {:reply, :ok, %{state | members: Map.delete(state.members, pid)}}
   end
 
   @impl true
   def handle_cast({:broadcast, from_pid, message}, %{members: members} = state) do
-    Enum.each(members, fn {_name, pid} ->
-      if pid != from_pid, do: send(pid, message)
+    sender_name = if from_pid == self(), do: "", else: "[#{members[from_pid]}] "
+    Enum.each(members, fn {pid, _name} ->
+      if pid != from_pid, do: send(pid, "#{sender_name}#{message}")
     end)
-
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
+    nm = state.members[pid]
+    members = Map.delete(state.members, pid)
+    Enum.each(members, fn {pid, _name} ->
+      send(pid, "* #{nm} has left the room")
+    end)
+    IO.puts "process #{pid} has exited"
+    {:noreply, %{state | members: members}}
   end
 end
