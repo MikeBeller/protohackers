@@ -12,11 +12,18 @@ defmodule Chat.Channel do
       :ok = Chat.Room.join(self(), name)
       :inet.setopts(sock, [active: true, packet: :line])
     end
+    {:ok, %{sock: sock}}
   end
 
   def handle_info({:tcp, _sock, msg}, state) do
     msg = String.trim(msg)
     Chat.Room.broadcast(self(), msg)
+    {:noreply, state}
+  end
+
+  def handle_info(message, state) when is_binary(message) do
+    IO.puts "handle_info: #{message} with state: #{inspect state}"
+    :gen_tcp.send(state.sock, message)
     {:noreply, state}
   end
 end

@@ -1,4 +1,4 @@
-defmodule Chat.RoomTest do
+defmodule ChatTest.RoomTest do
   use ExUnit.Case, async: true
   doctest Chat.Room
 
