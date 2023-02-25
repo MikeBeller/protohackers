@@ -9,8 +9,9 @@ defmodule Chat.Application do
   def start(_type, _args) do
     children = [
       {Chat.Room, name: Chat.Room, strategy: :one_for_one},
+      {Task, fn -> Chat.Server.init() end},
       #{Chat.Server, name: Chat.Server, strategy: :one_for_one},
-      {DynamicSupervisor, name: Chat.ChannelSupervisor},
+      {Task.Supervisor, name: Chat.TaskSupervisor},
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -8,13 +8,14 @@ defmodule Chat.Server do
     {:ok, server_sock}
   end
 
-  def loop_acceptor(sock) do
-    case :gen_tcp.accept(sock) do
-      {:ok, client} ->
-        DynamicSupervisor.start_child(Chat.Channel, :serve_client, [sock])
-        loop_acceptor(sock)
+  def loop_acceptor(server_sock) do
+    case :gen_tcp.accept(server_sock) do
+      {:ok, client_sock} ->
+        Task.Supervisor.start_child(Chat.TaskSupervisor,
+          fn -> Chat.Channel.serve_client(client_sock) end)
+        loop_acceptor(server_sock)
       {:error, :eagain} ->
-        loop_acceptor(sock)
+        loop_acceptor(server_sock)
       {:error, err} ->
         IO.inspect(err)
     end
