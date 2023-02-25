@@ -28,12 +28,15 @@ defmodule Chat.Room do
   # allow duplicate names
   @impl true
   def handle_call({:join, pid, name}, _from, %{members: members} = state) do
+    IO.puts "got here"
     Process.monitor(pid) # monitor the process for exit signals
     Enum.each(members, fn {pid, _name} ->
       send(pid, "* #{name} has joined the room")
     end)
     member_names = Map.values(members)
-    send(pid, "* present: #{Enum.join(member_names, ", ")}")
+    msg = "* present: #{Enum.join(member_names, ", ")}"
+    IO.puts "sending '#{msg}' to #{inspect pid}"
+    send(pid, msg)
     {:reply, :ok, %{state | members: Map.put(state.members, pid, name)}}
   end
 
@@ -58,7 +61,7 @@ defmodule Chat.Room do
     Enum.each(members, fn {pid, _name} ->
       send(pid, "* #{nm} has left the room")
     end)
-    IO.puts "process #{pid} has exited"
+    IO.puts "process #{inspect pid} has exited"
     {:noreply, %{state | members: members}}
   end
 end

@@ -3,7 +3,7 @@ defmodule ChatTest.RoomTest do
   doctest Chat.Room
 
   setup do
-    _pid = start_supervised!({Chat.Room, :ok})
+    #_pid = start_supervised!({Chat.Room, :ok})
     %{}
   end
 

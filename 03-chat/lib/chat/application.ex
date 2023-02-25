@@ -8,8 +8,9 @@ defmodule Chat.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: Chat.Worker.start_link(arg)
-      # {Chat.Worker, arg}
+      {Chat.Room, name: Chat.Room, strategy: :one_for_one},
+      #{Chat.Server, name: Chat.Server, strategy: :one_for_one},
+      {DynamicSupervisor, name: Chat.ChannelSupervisor},
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

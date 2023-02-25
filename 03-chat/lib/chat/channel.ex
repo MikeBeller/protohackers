@@ -9,6 +9,7 @@ defmodule Chat.Channel do
     {:ok, name} = :gen_tcp.recv(sock, 0)
     name = String.trim(name)
     if valid_name?(name) do
+      IO.puts "setting name to #{name}"
       :ok = Chat.Room.join(self(), name)
       :inet.setopts(sock, [active: true, packet: :line])
     end
@@ -25,5 +26,9 @@ defmodule Chat.Channel do
     IO.puts "handle_info: #{message} with state: #{inspect state}"
     :gen_tcp.send(state.sock, message)
     {:noreply, state}
+  end
+
+  def handle_info(star, state) do
+    IO.puts "Uncaught message in Channel: '#{inspect star}' #{inspect state}"
   end
 end

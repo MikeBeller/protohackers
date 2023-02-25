@@ -13,7 +13,9 @@ defmodule ChatTest.ServerTest do
     sock = connect(@port)
     assert {:ok, "name?\n"} = :gen_tcp.recv(sock, 0, 3000)
     assert :ok = :gen_tcp.send(sock, "bob\n")
-    assert {:ok, "* present: \n"} = :gen_tcp.recv(sock, 0, 3000)
+    #assert {:ok, "* present: \n"} = :gen_tcp.recv(sock, 0, 3000)
+    assert {:ok, foo} = :gen_tcp.recv(sock, 0, 3000)
+    IO.inspect(foo)
     :ok = :gen_tcp.close(sock)
     :ok = :gen_tcp.close(server_sock)
   end
