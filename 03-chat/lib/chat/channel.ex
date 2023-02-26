@@ -10,7 +10,7 @@ defmodule Chat.Channel do
     {:ok, name} = :gen_tcp.recv(sock, 0)
     name = String.trim(name)
     if valid_name?(name) do
-      IO.puts "setting name to #{name}"
+      IO.puts "setting name to #{name} in #{inspect self()}"
       :inet.setopts(sock, active: true)
       :ok = Chat.Room.join(self(), name)
       loop(sock)
