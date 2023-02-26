@@ -14,15 +14,15 @@ defmodule ChatTest.RoomTest do
   test "sends messages" do
     t1 = Task.async(fn ->
       assert Chat.Room.join(self(), "mike") == :ok
-      assert_receive "* present: "
-      assert_receive "* joe has joined the room"
-      assert_receive "[joe] hello"
+      assert_receive {:chat, "* present: "}
+      assert_receive {:chat, "* joe has joined the room"}
+      assert_receive {:chat, "[joe] hello"}
       :ok
     end)
     Process.sleep(10)
     t2 = Task.async(fn ->
       assert Chat.Room.join(self(), "joe") == :ok
-      assert_receive "* present: mike"
+      assert_receive {:chat, "* present: mike"}
       Chat.Room.broadcast(self(), "hello")
     end)
     :ok = Task.await(t1)
@@ -33,16 +33,16 @@ defmodule ChatTest.RoomTest do
   test "leaves" do
     t1 = Task.async(fn ->
       assert Chat.Room.join(self(), "mike") == :ok
-      assert_receive "* present: "
-      assert_receive "* joe has joined the room"
-      assert_receive "[joe] hello"
-      assert_receive "* joe has left the room"
+      assert_receive {:chat, "* present: "}
+      assert_receive {:chat, "* joe has joined the room"}
+      assert_receive {:chat, "[joe] hello"}
+      assert_receive {:chat, "* joe has left the room"}
       :ok
     end)
     Process.sleep(10)
     t2 = Task.async(fn ->
       assert Chat.Room.join(self(), "joe") == :ok
-      assert_receive "* present: mike"
+      assert_receive {:chat, "* present: mike"}
       Chat.Room.broadcast(self(), "hello")
       :ok
     end)
