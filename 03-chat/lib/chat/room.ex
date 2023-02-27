@@ -28,16 +28,13 @@ defmodule Chat.Room do
   # allow duplicate names
   @impl true
   def handle_call({:join, pid, name}, _from, %{members: members} = state) do
-    IO.puts "got here"
     Process.monitor(pid) # monitor the process for exit signals
     Enum.each(members, fn {pid, _name} ->
       send(pid, {:chat, "* #{name} has joined the room"})
     end)
     member_names = Map.values(members)
     msg = "* present: #{Enum.join(member_names, ", ")}"
-    IO.puts "sending '#{msg}' to #{inspect pid}"
-    send(pid, {:chat, msg})
-    {:reply, :ok, %{state | members: Map.put(state.members, pid, name)}}
+    {:reply, {:ok, msg}, %{state | members: Map.put(state.members, pid, name)}}
   end
 
   @impl true

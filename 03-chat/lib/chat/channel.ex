@@ -5,14 +5,20 @@ defmodule Chat.Channel do
       && String.match?(name, ~r/^[a-zA-Z0-9]+$/)
   end
 
+  defp send_sock(sock, msg) do
+    :gen_tcp.send(sock, msg <> "\n")
+  end
+
   def serve_client(sock) do
-    :gen_tcp.send(sock, "name?\n")
+    send_sock(sock, "name?")
     {:ok, name} = :gen_tcp.recv(sock, 0)
     name = String.trim(name)
     if valid_name?(name) do
       IO.puts "setting name to #{name} in #{inspect self()}"
+      {:ok, msg} = Chat.Room.join(self(), name)
+      IO.puts "sending msg from channel: #{msg}"
+      send_sock(sock, msg)
       :inet.setopts(sock, active: true)
-      :ok = Chat.Room.join(self(), name)
       loop(sock)
     end
   end
@@ -25,7 +31,7 @@ defmodule Chat.Channel do
         Chat.Room.broadcast(self(), msg)
         loop(sock)
       {:chat, msg} ->
-        :gen_tcp.send(sock, msg)
+        send_sock(sock, msg)
         loop(sock)
       msg ->
         IO.puts "UNCAUGHT MESSAGE: #{inspect msg}"
