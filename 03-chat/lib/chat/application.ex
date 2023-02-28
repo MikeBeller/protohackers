@@ -8,10 +8,10 @@ defmodule Chat.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      {Task.Supervisor, name: Chat.TaskSupervisor},
       {Chat.Room, name: Chat.Room, strategy: :one_for_one},
       {Task, fn -> Chat.Server.init() end},
       #{Chat.Server, name: Chat.Server, strategy: :one_for_one},
-      {Task.Supervisor, name: Chat.TaskSupervisor},
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

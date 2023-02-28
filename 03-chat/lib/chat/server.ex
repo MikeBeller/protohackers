@@ -18,7 +18,7 @@ defmodule Chat.Server do
       {:error, :eagain} ->
         loop_acceptor(server_sock)
       {:error, err} ->
-        IO.inspect(err)
+        IO.puts("Acceptor quit with error: #{inspect err}")
     end
   end
 end
