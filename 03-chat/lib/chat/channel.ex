@@ -11,24 +11,26 @@ defmodule Chat.Channel do
 
   def serve_client(sock) do
     send_sock(sock, "name?")
-    # below shows benefits of "let it crash".  If the socket closes before
-    # we get a name, the process will crash and it's ok.
-    {:ok, name} = :gen_tcp.recv(sock, 0)
-    name = String.trim(name)
-    if valid_name?(name) do
-      IO.puts "setting name to #{name} in #{inspect self()}"
-      {:ok, msg} = Chat.Room.join(self(), name)
-      IO.puts "sending msg from channel: #{msg}"
-      send_sock(sock, msg)
-      :inet.setopts(sock, active: true)
-      loop(sock)
+    case :gen_tcp.recv(sock, 0) do
+      {:ok, name} ->
+        name = String.trim(name)
+        if valid_name?(name) do
+          {:ok, msg} = Chat.Room.join(self(), name)
+          send_sock(sock, msg)
+          :inet.setopts(sock, active: true)
+          loop(sock)
+        else
+          send_sock(sock, "invalid name")
+          :gen_tcp.close(sock)
+        end
+      {:error, :closed} ->
+        :closed
     end
   end
 
   def loop(sock) do
     receive do
       {:tcp, _sock, msg} ->
-        IO.puts "received: #{msg}"
         msg = String.trim(msg)
         Chat.Room.broadcast(self(), msg)
         loop(sock)

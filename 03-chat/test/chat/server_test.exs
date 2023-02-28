@@ -4,8 +4,8 @@ defmodule ChatTest.ServerTest do
 
   setup do
     _pid0 = start_supervised!({Task.Supervisor, name: Chat.TaskSupervisor})
-    _pid1 = start_supervised!({Chat.Room, :ok})
-    _pid2 = start_supervised!({Chat.Server, port: @test_port})
+    _pid1 = start_supervised!({Chat.Room, []})
+    _pid2 = start_supervised!({Chat.Server, [@test_port]})
     %{}
   end
 

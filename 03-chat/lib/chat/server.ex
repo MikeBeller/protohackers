@@ -1,10 +1,8 @@
 defmodule Chat.Server do
   use Task, restart: :permanent
 
-  @port 9999
-
-  def start_link(opts \\ %{port: @port}) do
-    Task.start_link(__MODULE__, :run, [opts[:port]])
+  def start_link([port]) do
+    Task.start_link(__MODULE__, :run, [port])
   end
 
   def run(port) do

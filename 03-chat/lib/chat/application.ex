@@ -5,12 +5,14 @@ defmodule Chat.Application do
 
   use Application
 
+  @port 9999
+
   @impl true
   def start(_type, _args) do
     children = [
       {Task.Supervisor, name: Chat.TaskSupervisor},
-      {Chat.Room, name: Chat.Room},
-      {Chat.Server, name: Chat.Server, port: 9999},
+      {Chat.Room, []},
+      {Chat.Server, [@port]},
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
