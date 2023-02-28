@@ -1,7 +1,13 @@
 defmodule Chat.Server do
+  use Task, restart: :permanent
+
   @port 9999
 
-  def start(port \\ @port) do
+  def start_link(opts \\ %{port: @port}) do
+    Task.start_link(__MODULE__, :run, [opts[:port]])
+  end
+
+  def run(port) do
     {:ok, server_sock} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true])
     IO.puts "Accepting connections on port #{port}"
     loop_acceptor(server_sock)

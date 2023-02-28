@@ -34,13 +34,14 @@ defmodule Chat.Room do
 
   @impl true
   def init(:ok) do
+    Process.flag(:trap_exit, true)
     {:ok, %{members: %{}}}
   end
 
   # allow duplicate names
   @impl true
   def handle_call({:join, pid, name}, _from, %{members: members} = state) do
-    Process.monitor(pid) # monitor the process for exit signals
+    Process.link(pid) # monitor the process for exit signals
     Enum.each(members, fn {pid, _name} ->
       send(pid, {:chat, "* #{name} has joined the room"})
     end)
@@ -65,8 +66,7 @@ defmodule Chat.Room do
   end
 
   @impl true
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    IO.puts "process #{inspect pid} has exited"
+  def handle_info({:EXIT, pid, _reason}, state) do
     state = do_leave(pid, state)
     {:noreply, state}
   end

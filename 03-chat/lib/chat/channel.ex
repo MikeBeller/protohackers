@@ -11,6 +11,8 @@ defmodule Chat.Channel do
 
   def serve_client(sock) do
     send_sock(sock, "name?")
+    # below shows benefits of "let it crash".  If the socket closes before
+    # we get a name, the process will crash and it's ok.
     {:ok, name} = :gen_tcp.recv(sock, 0)
     name = String.trim(name)
     if valid_name?(name) do
