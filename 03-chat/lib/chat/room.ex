@@ -20,6 +20,18 @@ defmodule Chat.Room do
     GenServer.cast(Chat.Room, {:broadcast, from_pid, message})
   end
 
+  defp do_leave(pid, %{members: members} = state) do
+    case Map.fetch(members, pid) do
+      {:ok, name} ->
+        members = Map.delete(state.members, pid)
+        Enum.each(members, fn {pid, _name} ->
+          send(pid, {:chat, "* #{name} has left the room"})
+        end)
+        %{state | members: members}
+      _ -> state
+    end
+  end
+
   @impl true
   def init(:ok) do
     {:ok, %{members: %{}}}
@@ -39,7 +51,8 @@ defmodule Chat.Room do
 
   @impl true
   def handle_call({:leave, pid}, _from, state) do
-    {:reply, :ok, %{state | members: Map.delete(state.members, pid)}}
+    state = do_leave(pid, state)
+    {:reply, :ok, state}
   end
 
   @impl true
@@ -53,12 +66,8 @@ defmodule Chat.Room do
 
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    nm = state.members[pid]
-    members = Map.delete(state.members, pid)
-    Enum.each(members, fn {pid, _name} ->
-      send(pid, {:chat, "* #{nm} has left the room"})
-    end)
     IO.puts "process #{inspect pid} has exited"
-    {:noreply, %{state | members: members}}
+    state = do_leave(pid, state)
+    {:noreply, state}
   end
 end

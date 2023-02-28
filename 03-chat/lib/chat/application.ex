@@ -10,7 +10,7 @@ defmodule Chat.Application do
     children = [
       {Task.Supervisor, name: Chat.TaskSupervisor},
       {Chat.Room, name: Chat.Room, strategy: :one_for_one},
-      {Task, fn -> Chat.Server.init() end},
+      {Task, fn -> Chat.Server.start() end},
       #{Chat.Server, name: Chat.Server, strategy: :one_for_one},
     ]
 

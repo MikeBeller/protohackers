@@ -1,11 +1,10 @@
 defmodule Chat.Server do
   @port 9999
 
-  def init(port \\ @port) do
+  def start(port \\ @port) do
     {:ok, server_sock} = :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true])
     IO.puts "Accepting connections on port #{port}"
-    _task = Task.start_link(fn -> loop_acceptor(server_sock) end)
-    {:ok, server_sock}
+    loop_acceptor(server_sock)
   end
 
   def loop_acceptor(server_sock) do
@@ -19,6 +18,7 @@ defmodule Chat.Server do
         loop_acceptor(server_sock)
       {:error, err} ->
         IO.puts("Acceptor quit with error: #{inspect err}")
+        err
     end
   end
 end

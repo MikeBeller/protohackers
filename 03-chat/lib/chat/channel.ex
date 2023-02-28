@@ -33,6 +33,8 @@ defmodule Chat.Channel do
       {:chat, msg} ->
         send_sock(sock, msg)
         loop(sock)
+      {:tcp_closed, _sock} ->
+        Chat.Room.leave(self())
       msg ->
         IO.puts "UNCAUGHT MESSAGE: #{inspect msg}"
         loop(sock)

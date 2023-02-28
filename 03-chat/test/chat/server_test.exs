@@ -5,8 +5,7 @@ defmodule ChatTest.ServerTest do
   setup do
     _pid0 = start_supervised!({Task.Supervisor, name: Chat.TaskSupervisor})
     _pid1 = start_supervised!({Chat.Room, :ok})
-    {:ok, server_sock} = :gen_tcp.listen(@test_port, [:binary, packet: :line, active: false, reuseaddr: true])
-    _pid2 = start_supervised!({Task, fn -> Chat.Server.loop_acceptor(server_sock) end})
+    _pid2 = start_supervised!({Task, fn -> Chat.Server.start(@test_port) end})
     %{}
   end
 
@@ -45,9 +44,14 @@ defmodule ChatTest.ServerTest do
   end
 
   test "chat_2" do
-    {_sock1, []}  = login(@test_port, "alice")
-    {_sock2, ["alice"]} = login(@test_port, "bob")
-
+    {sock1, []}  = login(@test_port, "alice")
+    {sock2, ["alice"]} = login(@test_port, "bob")
+    {:ok, "* bob has joined the room"} = recv_sock(sock1)
+    send_sock(sock1, "hello world")
+    {:ok, "[alice] hello world"} = recv_sock(sock2)
+    send_sock(sock2, "hello to you too")
+    {:ok, "[bob] hello to you too"} = recv_sock(sock1)
+    :gen_tcp.close(sock1)
+    {:ok, "* alice has left the room"} = recv_sock(sock2)
   end
-
 end
