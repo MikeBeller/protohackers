@@ -39,10 +39,17 @@ defmodule SimpleChat do
         state = handle_close(state, client_sock)
         main_loop(state)
       msg -> IO.puts("Unknown message: #{inspect msg}")
+        main_loop(state)
     end
   end
 
-  def handle_data(state, client_sock, data) do
+  defp valid_name?(name) do
+    # check if name is all alphanumeric and is at least one character long
+    String.match?(name, ~r/^[a-zA-Z0-9]+$/)
+  end
+
+  defp handle_data(state, client_sock, data) do
+    data = String.trim(data)
     IO.puts("Data received: #{inspect data}")
 
     case Map.fetch(state, client_sock) do
@@ -50,25 +57,41 @@ defmodule SimpleChat do
         IO.puts("Unknown client: #{inspect client_sock}")
       {:ok, :new} ->
         if valid_name?(data) do
-          state = Map.put(state, client_sock, data)
           names = Map.values(state) |> Enum.filter(fn x -> x != :new end) |> Enum.join(", ")
-          :gen_tcp.send(client_sock, "* present: #{names}")
-          Map.put(state, client_sock, data)
+          :gen_tcp.send(client_sock, "* present: #{names}\n")
+          state
+          |> Enum.each(fn {sock, name} ->
+            if name != :new do
+              :gen_tcp.send(sock, "* #{data} has joined\n")
+            end
+          end)
+          state = Map.put(state, client_sock, data)
+          state
         else
           :gen_tcp.close(client_sock)
           state
+        end
       {:ok, name} ->
         state
-        |> Enum.each( fn {sock, name} ->
-          :gen_tcp.send(sock, "[#{name}] #{data}")
+        |> Enum.each( fn {sock, _name} ->
+          if sock != client_sock do
+            :gen_tcp.send(sock, "[#{name}] #{data}\n")
+          end
         end)
         state
     end
   end
 
-  def handle_close(state, client_sock) do
+  defp handle_close(state, client_sock) do
     IO.puts("Client disconnected: #{inspect client_sock}")
-    Map.delete(state, client_sock)
+    state = Map.delete(state, client_sock)
+    state
+    |> Enum.each(fn {sock, name} ->
+      if name != :new do
+        :gen_tcp.send(sock, "* #{name} has left\n")
+      end
+    end)
+    state
   end
 end
 
