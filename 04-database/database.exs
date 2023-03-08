@@ -17,8 +17,7 @@ defmodule Database do
 
   def loop(socket, state) do
     {:ok, {ip, port, msg}} = :gen_udp.recv(socket, 0)
-    msg = String.trim(msg)
-    IO.puts "Received #{msg} from #{inspect ip}:#{port}"
+    #IO.puts "Received #{msg} from #{inspect ip}:#{port}"
     case parse(msg) do
       {:set, key, value} ->
         loop(socket, Map.put(state, key, value))
@@ -27,7 +26,7 @@ defmodule Database do
           "version" -> @version
           _ -> Map.get(state, key, "")
         end
-        IO.puts "Responding with #{response}"
+        #IO.puts "Responding with #{response}"
         :gen_udp.send(socket, {ip, port}, response)
         loop(socket, state)
     end
