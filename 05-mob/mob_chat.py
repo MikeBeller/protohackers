@@ -38,9 +38,11 @@ async def pipe(reader, writer):
         rewritten_message = rewrite_message(message)
         writer.write(rewritten_message.encode())
         await writer.drain()
+    writer.close()
+    await writer.wait_closed()
 
 async def main():
-    server = await asyncio.start_server(handle_client, 'localhost', 9999)
+    server = await asyncio.start_server(handle_client, '0.0.0.0', 9999)
     addr = server.sockets[0].getsockname()
     logging.debug('serving on {}'.format(addr))
     try:
