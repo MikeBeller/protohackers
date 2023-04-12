@@ -41,7 +41,7 @@
   (coro
     (loop [chunk :in chunks]
       (def lines (string/split "\n" (string extra chunk)))
-      (set extra (string extra (array/pop lines)))
+      (set extra (array/pop lines))
       (loop [line :in lines]
         (yield line)))))
 
@@ -49,7 +49,7 @@
   (generate [chunk :iterate (ev/read conn 1024)]
     chunk))
 
-(assert (deep= @["foo\n" "bar\n" "baz\n" "beef\n"] (dprint (values (byline ["foo\nbar\n" "ba" "z\nbee" "f\n"])))))
+(assert (deep= @["foo" "bar" "baz" "beef"] (values (byline ["foo\nbar\n" "ba" "z\nbee" "f\n"]))))
 
 (defn handler [conn]
   (defer (:close conn)

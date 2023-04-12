@@ -3,7 +3,7 @@ Mix.install([{:jason, "~> 1.0"}])
 ExUnit.start()
 
 defmodule Primetime.PrimetimeTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
 
   defp connect(port) do
     {:ok, sock} = :gen_tcp.connect('localhost', port,
@@ -60,6 +60,7 @@ defmodule Primetime.PrimetimeTest do
     msg = [7, 81, 13]
     |> Enum.map(fn q -> Jason.encode!(%{"method" => "isPrime", "number" => q}) <> "\n" end)
     |> Enum.join()
+    IO.inspect(msg)
     assert :ok = :gen_tcp.send(sock, msg)
     for a <- [true, false, true] do
       assert {:ok, resp} = :gen_tcp.recv(sock, 0, 3000)
