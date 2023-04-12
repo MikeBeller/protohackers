@@ -4,7 +4,7 @@
       (net/write conn msg))))
 
 (defn main [&]
-  (def my-server (net/listen "127.0.0.1" 9999))
+  (def my-server (net/listen "0.0.0.0" 9999))
   (forever
     (def conn (net/accept my-server))
     (ev/call handler conn)))
