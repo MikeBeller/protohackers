@@ -54,4 +54,17 @@ defmodule Primetime.PrimetimeTest do
     end)
   end
 
+
+  test "primetime_multiple" do
+    sock = connect(@port)
+    msg = [7, 81, 13]
+    |> Enum.map(fn q -> Jason.encode!(%{"method" => "isPrime", "number" => q}) <> "\n" end)
+    |> Enum.join()
+    assert :ok = :gen_tcp.send(sock, msg)
+    for a <- [true, false, true] do
+      assert {:ok, resp} = :gen_tcp.recv(sock, 0, 3000)
+      assert Jason.decode!(resp) == %{"method" => "isPrime", "prime" => a}
+    end
+    :ok = :gen_tcp.close(sock)
+  end
 end

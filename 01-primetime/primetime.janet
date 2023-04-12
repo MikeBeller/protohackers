@@ -21,6 +21,7 @@
 (assert (prime? 17))
 (assert (not (prime? 18)))
 
+(defn dprint [x] (pp x) x)
 
 (defn primetime [js]
   (print "received json: " js)
@@ -28,15 +29,31 @@
     (try
       (json/decode (string/trim js) true)
       ([err] nil)))
-  (print "decoded: " msg)
-  (match msg
-    @{:method "isPrime" :number num}
-        (json/encode @{:method "isPrime" :prime (prime? num)})
-    (json/encode @{:error "invalid"})))
+  (printf "decoded: %j" msg)
+  (dprint
+    (match msg
+      @{:method "isPrime" :number num}
+      (json/encode @{:method "isPrime" :prime (prime? num)})
+      (json/encode @{:error "invalid"}))))
+
+(defn byline [chunks]
+  (var extra "")
+  (coro
+    (loop [chunk :in chunks]
+      (def lines (string/split "\n" (string extra chunk)))
+      (set extra (string extra (array/pop lines)))
+      (loop [line :in lines]
+        (yield line)))))
+
+(defn reader [conn]
+  (generate [chunk :iterate (ev/read conn 1024)]
+    chunk))
+
+(assert (deep= @["foo\n" "bar\n" "baz\n" "beef\n"] (dprint (values (byline ["foo\nbar\n" "ba" "z\nbee" "f\n"])))))
 
 (defn handler [conn]
   (defer (:close conn)
-    (loop [js :iterate (ev/read conn 1024) :while js]
+    (loop [js :in (reader conn)]
       (def resp (primetime js))
       (ev/write conn resp)
       (ev/write conn "\n"))))
