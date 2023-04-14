@@ -24,17 +24,14 @@
 (defn dprint [x] (pp x) x)
 
 (defn primetime [js]
-  (print "received json: " js)
   (def msg
     (try
       (json/decode (string/trim js) true)
       ([err] nil)))
-  (printf "decoded: %j" msg)
-  (dprint
-    (match msg
-      @{:method "isPrime" :number num}
-      (json/encode @{:method "isPrime" :prime (prime? num)})
-      (json/encode @{:error "invalid"}))))
+  (match msg
+    @{:method "isPrime" :number num}
+    (json/encode @{:method "isPrime" :prime (prime? num)})
+    (json/encode @{:error "invalid"})))
 
 (defn byline [chunks]
   (var extra "")
@@ -53,7 +50,7 @@
 
 (defn handler [conn]
   (defer (:close conn)
-    (loop [js :in (reader conn)]
+    (loop [js :in (byline (reader conn))]
       (def resp (primetime js))
       (ev/write conn resp)
       (ev/write conn "\n"))))

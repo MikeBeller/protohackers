@@ -64,7 +64,7 @@ defmodule Primetime.PrimetimeTest do
     assert :ok = :gen_tcp.send(sock, msg)
     for a <- [true, false, true] do
       assert {:ok, resp} = :gen_tcp.recv(sock, 0, 3000)
-      assert Jason.decode!(resp) == %{"method" => "isPrime", "prime" => a}
+      assert %{"method" => "isPrime", "prime" => ^a} = Jason.decode!(resp)
     end
     :ok = :gen_tcp.close(sock)
   end
