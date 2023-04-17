@@ -1,23 +1,15 @@
 
-(defn twos-cpl [num]
-  (if (>= num 0)
-    num
-    (+ 0xffffffff num 1)))
-
-(assert (= (twos-cpl -2) 0xfffffffe))
 
 (defn htonl [num]
-  (def buf (buffer/new 4))
-  (buffer/push-word buf (twos-cpl num))
-  (reverse! buf)
-  buf)
+  (def sint (int/s64 num))
+  (def buf (int/to-bytes sint :be))
+  (buffer/slice buf 4 8))
 
 (defn read-int32 [buf off]
-  (printf "buf: %j" buf)
+  #(printf "buf: %j" buf)
   (var r 0)
   (loop [i :range [off (+ off 4)]]
     (set r (blshift r 8))
-    (print "at offset: " i " byte is: " (get buf i))
     (+= r (get buf i)))
   r)
 
@@ -39,7 +31,7 @@
 (defn handler [conn]
   (defer (:close conn)
     (def prices @{})
-    (loop [msg :iterate (ev/read conn 9) :while msg]
+    (loop [msg :iterate (ev/chunk conn 9) :while msg]
       (def [cmd n1 n2] (parse msg))
       (case cmd
         73 (put prices n1 n2)
