@@ -1,4 +1,10 @@
-(defn twos-cpl [num] (math/abs num))
+
+(defn twos-cpl [num]
+  (if (>= num 0)
+    num
+    (+ 0xffffffff num 1)))
+
+(assert (= (twos-cpl -2) 0xfffffffe))
 
 (defn htonl [num]
   (def buf (buffer/new 4))
