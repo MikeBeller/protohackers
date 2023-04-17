@@ -9,14 +9,20 @@
 (defn htonl [num]
   (def buf (buffer/new 4))
   (buffer/push-word buf (twos-cpl num))
-  (reverse! buf))
+  (reverse! buf)
+  buf)
 
 (defn read-int32 [buf off]
+  (printf "buf: %j" buf)
   (var r 0)
   (loop [i :range [off (+ off 4)]]
     (set r (blshift r 8))
+    (print "at offset: " i " byte is: " (get buf i))
     (+= r (get buf i)))
   r)
+
+(assert (= 31297 (read-int32 (htonl 31297) 0)))
+(assert (= -1 (read-int32 (htonl -1) 0)))
 
 (defn zeronan [x] (if (nan? x) 0 x))
 
